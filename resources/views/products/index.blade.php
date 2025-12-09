@@ -101,33 +101,6 @@
 
         {{-- Products Grid --}}
         <div class="lg:col-span-3">
-            {{-- Toolbar --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex items-center justify-between">
-                <p class="text-sm text-gray-600">
-                    Showing {{ $products->firstItem() ?? 0 }}-{{ $products->lastItem() ?? 0 }} of {{ $products->total() }} results
-                </p>
-                
-                <div class="flex items-center gap-4">
-                    <form action="{{ route('products.index') }}" method="GET" class="flex items-center gap-2">
-                        <input type="hidden" name="category" value="{{ request('category') }}">
-                        @if(request('price_ranges'))
-                            @foreach(is_array(request('price_ranges')) ? request('price_ranges') : [request('price_ranges')] as $range)
-                                <input type="hidden" name="price_ranges[]" value="{{ $range }}">
-                            @endforeach
-                        @endif
-                        <label class="text-sm text-gray-600">Sort by:</label>
-                        <select name="sort" onchange="this.form.submit()" class="input-field py-2">
-                            <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest</option>
-                            <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
-                            <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Price: High to Low</option>
-                            <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name: A-Z</option>
-                        </select>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Products Grid --}}
-            {{-- Products Grid --}}
             <div id="productGridContainer">
                 @include('components.product-grid', ['products' => $products])
             </div>
