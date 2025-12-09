@@ -19,12 +19,28 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('home') }}" class="text-sm text-gray-600 hover:text-primary-500">View Store</a>
-                    <a href="{{ route('profile.edit') }}" class="text-sm text-gray-600 hover:text-primary-500">{{ auth()->user()->name }}</a>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-sm text-danger-500 hover:text-danger-600">Logout</button>
-                    </form>
+                    <a href="{{ route('home') }}" class="text-sm text-gray-600 hover:text-primary-500 font-medium">View Store</a>
+
+                    <!-- User Dropdown -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="flex items-center gap-2 text-primary-500 hover:text-primary-600 font-bold text-sm transition">
+                            <span class="hidden lg:inline">{{ auth()->user()->name }}</span>
+                            <svg class="w-4 h-4 hidden lg:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        
+                        <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                            <a href="{{ route('transactions.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Orders</a>
+                            <a href="{{ route('seller.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Seller Dashboard</a>
+                            <hr class="my-2">
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

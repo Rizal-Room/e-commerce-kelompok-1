@@ -50,14 +50,30 @@ class SellerOrderController extends Controller
             'payment_status' => 'required|in:unpaid,paid,processed,shipped,completed,cancelled',
         ]);
 
+        // Check if status is CHANGING to completed
+        $oldStatus = $order->payment_status;
+        
         $order->update($validated);
 
         // If order is completed, add to store balance
-        if ($validated['payment_status'] === 'completed' && $order->payment_status !== 'completed') {
-            $storeBalance = auth()->user()->store->storeBalance;
-            if ($storeBalance) {
-                $storeBalance->increment('balance', $order->grand_total);
-            }
+        if ($validated['payment_status'] === 'completed' && $oldStatus !== 'completed') {
+            $storeBalance = auth()->user()->store->storeBalance()->firstOrCreate(
+                ['store_id' => auth()->user()->store->id],
+                ['balance' => 0]
+            );
+
+            $amount = $order->grand_total;
+            $storeBalance->increment('balance', $amount);
+
+            // Create history record
+            \App\Models\StoreBalanceHistory::create([
+                'store_balance_id' => $storeBalance->id,
+                'type' => 'income',
+                'reference_id' => $order->id,
+                'reference_type' => Transaction::class,
+                'amount' => $amount,
+                'remarks' => 'Sales revenue from Order #' . $order->code,
+            ]);
         }
 
         return back()->with('success', 'Order status updated successfully!');
