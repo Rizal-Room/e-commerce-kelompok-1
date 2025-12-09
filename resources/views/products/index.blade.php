@@ -51,32 +51,51 @@
             {{-- Price Filter --}}
             <div class="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 class="font-bold mb-4" style="color: #252B42;">Filter by Price</h3>
-                <div class="space-y-2">
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), [])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ !request('min_price') && !request('max_price') ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        All Prices
-                    </a>
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), ['max_price' => 100000])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ request('max_price') == 100000 ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        Under Rp 100,000
-                    </a>
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), ['min_price' => 100000, 'max_price' => 250000])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ request('min_price') == 100000 && request('max_price') == 250000 ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        Rp 100,000 - Rp 250,000
-                    </a>
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), ['min_price' => 250000, 'max_price' => 500000])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ request('min_price') == 250000 && request('max_price') == 500000 ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        Rp 250,000 - Rp 500,000
-                    </a>
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), ['min_price' => 500000, 'max_price' => 1000000])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ request('min_price') == 500000 && request('max_price') == 1000000 ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        Rp 500,000 - Rp 1,000,000
-                    </a>
-                    <a href="{{ route('products.index', array_merge(request()->except(['min_price', 'max_price']), ['min_price' => 1000000])) }}" 
-                       class="block py-2 px-3 text-sm rounded {{ request('min_price') == 1000000 && !request('max_price') ? 'bg-primary-500 text-white font-bold' : 'text-gray-600 hover:bg-gray-100' }}">
-                        Above Rp 1,000,000
-                    </a>
-                </div>
+                <form id="priceFilterForm" action="{{ route('products.index') }}" method="GET">
+                    {{-- Preserve other query parameters --}}
+                    <input type="hidden" name="category" value="{{ request('category') }}">
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                    
+                    <div class="space-y-3">
+                        @php
+                            $selectedRanges = request('price_ranges', []);
+                            if (!is_array($selectedRanges)) {
+                                $selectedRanges = [$selectedRanges];
+                            }
+                            
+                            $priceRanges = [
+                                ['value' => '0-200000', 'label' => 'Rp 0 - Rp 200.000'],
+                                ['value' => '200000-500000', 'label' => 'Rp 200.000 - Rp 500.000'],
+                                ['value' => '500000-1000000', 'label' => 'Rp 500.000 - Rp 1.000.000'],
+                                ['value' => '1000000-0', 'label' => 'Rp 1.000.000 - Rp 5.000.000'],
+                            ];
+                        @endphp
+                        
+                        {{-- Clear all filters option --}}
+                        <div class="pb-2 border-b border-gray-200">
+                            <a href="{{ route('products.index', request()->except(['price_ranges', 'min_price', 'max_price'])) }}" 
+                               class="text-sm {{ empty($selectedRanges[0]) ? 'text-primary-500 font-bold' : 'text-gray-600 hover:text-primary-500' }}">
+                                All Prices
+                            </a>
+                        </div>
+                        
+                        {{-- Checkbox filters --}}
+                        @foreach($priceRanges as $range)
+                            <label class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors">
+                                <input 
+                                    type="checkbox" 
+                                    name="price_ranges[]" 
+                                    value="{{ $range['value'] }}"
+                                    {{ in_array($range['value'], $selectedRanges) ? 'checked' : '' }}
+                                    onchange="document.getElementById('priceFilterForm').submit()"
+                                    class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-2 cursor-pointer"
+                                >
+                                <span class="text-sm text-gray-700">{{ $range['label'] }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </form>
             </div>
         </aside>
 
@@ -91,8 +110,11 @@
                 <div class="flex items-center gap-4">
                     <form action="{{ route('products.index') }}" method="GET" class="flex items-center gap-2">
                         <input type="hidden" name="category" value="{{ request('category') }}">
-                        <input type="hidden" name="min_price" value="{{ request('min_price') }}">
-                        <input type="hidden" name="max_price" value="{{ request('max_price') }}">
+                        @if(request('price_ranges'))
+                            @foreach(is_array(request('price_ranges')) ? request('price_ranges') : [request('price_ranges')] as $range)
+                                <input type="hidden" name="price_ranges[]" value="{{ $range }}">
+                            @endforeach
+                        @endif
                         <label class="text-sm text-gray-600">Sort by:</label>
                         <select name="sort" onchange="this.form.submit()" class="input-field py-2">
                             <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest</option>

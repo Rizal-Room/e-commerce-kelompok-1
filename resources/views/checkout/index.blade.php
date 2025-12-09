@@ -139,6 +139,103 @@
                         @enderror
                     </div>
                 </div>
+
+                <!-- Payment Method -->
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold mb-4">Payment Method</h2>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-400"
+                               onclick="this.querySelector('input').checked = true">
+                            <div class="flex items-center">
+                                <input 
+                                    type="radio" 
+                                    name="payment_method" 
+                                    value="cod" 
+                                    class="mr-3"
+                                    checked
+                                    required>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        </svg>
+                                        <p class="font-medium text-gray-900">Cash on Delivery (COD)</p>
+                                    </div>
+                                    <p class="text-sm text-gray-600 ml-7">Pay when you receive the product</p>
+                                </div>
+                            </div>
+                            <span class="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">Recommended</span>
+                        </label>
+
+                        <label class="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-400"
+                               onclick="this.querySelector('input').checked = true">
+                            <div class="flex items-center">
+                                <input 
+                                    type="radio" 
+                                    name="payment_method" 
+                                    value="bank_transfer" 
+                                    class="mr-3"
+                                    required>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                        </svg>
+                                        <p class="font-medium text-gray-900">Bank Transfer</p>
+                                    </div>
+                                    <p class="text-sm text-gray-600 ml-7">Transfer to our bank account</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-400"
+                               onclick="this.querySelector('input').checked = true">
+                            <div class="flex items-center">
+                                <input 
+                                    type="radio" 
+                                    name="payment_method" 
+                                    value="e_wallet" 
+                                    class="mr-3"
+                                    required>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                        </svg>
+                                        <p class="font-medium text-gray-900">E-Wallet</p>
+                                    </div>
+                                    <p class="text-sm text-gray-600 ml-7">GoPay, OVO, DANA, ShopeePay</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors hover:border-gray-400"
+                               onclick="this.querySelector('input').checked = true">
+                            <div class="flex items-center">
+                                <input 
+                                    type="radio" 
+                                    name="payment_method" 
+                                    value="credit_card" 
+                                    class="mr-3"
+                                    required>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                        </svg>
+                                        <p class="font-medium text-gray-900">Credit/Debit Card</p>
+                                    </div>
+                                    <p class="text-sm text-gray-600 ml-7">Visa, Mastercard, JCB</p>
+                                </div>
+                            </div>
+                        </label>
+
+                        @error('payment_method')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
             </div>
 
             <!-- Right: Order Summary -->

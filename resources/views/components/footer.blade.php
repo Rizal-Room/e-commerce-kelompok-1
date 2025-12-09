@@ -4,7 +4,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             {{-- About Project --}}
             <div class="space-y-4">
-                <h3 class="font-bold text-gray-900 text-base">Bandage E-Commerce</h3>
+                <h3 class="font-bold text-gray-900 text-base font-serif">Fayren</h3>
                 <p class="text-sm text-gray-600">
                     Fashion e-commerce platform for University Final Project (UAP). 
                     Built with Laravel 12 & Tailwind CSS.

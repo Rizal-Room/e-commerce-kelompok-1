@@ -40,6 +40,7 @@ class CheckoutController extends Controller
             'city' => 'required|string|max:100',
             'postal_code' => 'required|string|max:10',
             'shipping_type' => 'required|in:regular,express,same_day',
+            'payment_method' => 'required|in:cod,bank_transfer,e_wallet,credit_card',
         ]);
 
         $cart = session('cart', []);
@@ -72,7 +73,15 @@ class CheckoutController extends Controller
             $itemsByStore[$storeId][] = $item;
         }
 
+
         $createdTransactions = [];
+
+        // Determine payment status based on payment method
+        // E-Wallet and Credit Card are instant payments, so mark as 'paid'
+        // COD and Bank Transfer require manual confirmation, so keep as 'unpaid'
+        $paymentStatus = in_array($request->payment_method, ['e_wallet', 'credit_card']) 
+            ? 'paid' 
+            : 'unpaid';
 
         // Create transaction for each store
         foreach ($itemsByStore as $storeId => $items) {
@@ -99,7 +108,8 @@ class CheckoutController extends Controller
                 'tracking_number' => null,
                 'tax' => $tax,
                 'grand_total' => $grandTotal,
-                'payment_status' => 'unpaid',
+                'payment_status' => $paymentStatus,
+                'payment_method' => $request->payment_method,
             ]);
 
             // Create transaction details

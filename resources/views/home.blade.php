@@ -1,6 +1,6 @@
 @extends('layouts.customer')
 
-@section('title', 'Bandage - Shop')
+@section('title', 'Fayren - Shop')
 
 @section('content')
 {{-- Hero Banner --}}
@@ -42,14 +42,18 @@
         <div class="max-w-5xl mx-auto">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {{-- Women Category --}}
-                <a href="{{ route('products.index', ['category' => 7]) }}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <a href="{{ route('products.index', ['category' => \App\Models\ProductCategory::where('name', 'Women')->value('id')]) }}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                     <div class="aspect-[3/4] overflow-hidden bg-gray-100">
-                        <img src="{{ asset('images/category-women.jpg') }}" alt="Women's Fashion" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500">
+                        <img src="{{ asset('images/category-women.jpg') }}" alt="Women's Fashion" class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                     <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
-                        <h3 class="text-3xl font-bold mb-2">WOMEN</h3>
-                        <p class="text-white/90 text-sm mb-4">{{ \App\Models\Product::where('product_category_id', 7)->orWhereHas('productCategory', fn($q) => $q->where('parent_id', 7))->count() }} Items</p>
+                        <h3 class="text-3xl font-bold mb-2 text-white">WOMEN</h3>
+                        <p class="text-white/90 text-sm mb-4">
+                            {{ \App\Models\Product::whereHas('productCategory', function($q) {
+                                $q->where('name', 'women')->orWhereHas('parent', fn($sq) => $sq->where('name', 'women'));
+                            })->count() }} Items
+                        </p>
                         <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold">
                             Shop Women
                             <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,14 +64,18 @@
                 </a>
 
                 {{-- Men Category --}}
-                <a href="{{ route('products.index', ['category' => 1]) }}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <a href="{{ route('products.index', ['category' => \App\Models\ProductCategory::where('name', 'Men')->value('id')]) }}" class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                     <div class="aspect-[3/4] overflow-hidden bg-gray-100">
-                        <img src="{{ asset('images/category-men.jpg') }}" alt="Men's Fashion" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500">
+                        <img src="{{ asset('images/category-men.jpg') }}" alt="Men's Fashion" class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                     <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
-                        <h3 class="text-3xl font-bold mb-2">MEN</h3>
-                        <p class="text-white/90 text-sm mb-4">{{ \App\Models\Product::where('product_category_id', 1)->orWhereHas('productCategory', fn($q) => $q->where('parent_id', 1))->count() }} Items</p>
+                        <h3 class="text-3xl font-bold mb-2 text-white">MEN</h3>
+                        <p class="text-white/90 text-sm mb-4">
+                            {{ \App\Models\Product::whereHas('productCategory', function($q) {
+                                $q->where('name', 'men')->orWhereHas('parent', fn($sq) => $sq->where('name', 'men'));
+                            })->count() }} Items
+                        </p>
                         <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold">
                             Shop Men
                             <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

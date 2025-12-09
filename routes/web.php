@@ -39,6 +39,9 @@ Route::middleware('auth')->group(function () {
     // Transaction Routes
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
+
+    // Reviews
+    Route::post('/reviews', [App\Http\Controllers\ProductReviewController::class, 'store'])->name('reviews.store');
 });
 
 // Dashboard (for authenticated users)

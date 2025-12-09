@@ -1,7 +1,15 @@
 @props(['product'])
 
+{{-- Check if this is the seller's own product --}}
+@php
+    $isOwnProduct = auth()->check() && 
+                    auth()->user()->store && 
+                    $product->store_id === auth()->user()->store->id;
+@endphp
+
 {{-- Bandage Style Product Card --}}
-<div class="product-card group" onclick="window.location.href='{{ route('products.show', $product->slug) }}'">
+<div class="product-card group {{ $isOwnProduct ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer' }}" 
+     onclick="{{ $isOwnProduct ? 'event.preventDefault()' : "window.location.href='" . route('products.show', $product->slug) . "'" }}">
     {{-- Product Image with 3:4 Aspect Ratio --}}
     <div class="relative aspect-[3/4] overflow-hidden bg-gray-100">
         @if($product->productImages->count() > 0)
@@ -18,9 +26,10 @@
 
         {{-- Wishlist Button (top right) --}}
         <button 
-            onclick="event.stopPropagation(); toggleWishlist({{ $product->id }})" 
-            class="absolute top-4 right-4 p-2 rounded-full bg-white shadow-md hover:scale-110 transition-all duration-200 z-10">
-            <svg class="w-5 h-5 wishlist-icon {{ in_array($product->id, session('wishlist', [])) ? 'fill-danger-500 text-danger-500' : 'text-text-secondary' }}" 
+            onclick="event.stopPropagation(); {{ $isOwnProduct ? 'return false;' : 'toggleWishlist(' . $product->id . ')' }}" 
+            class="absolute top-4 right-4 p-2 rounded-full bg-white shadow-md {{ $isOwnProduct ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110' }} transition-all duration-200 z-10"
+            {{ $isOwnProduct ? 'disabled' : '' }}>
+            <svg class="w-5 h-5 wishlist-icon {{ in_array($product->id, session('wishlist', [])) ? 'fill-red-500 text-red-500' : 'text-gray-600' }}" 
                  fill="none" 
                  stroke="currentColor" 
                  viewBox="0 0 24 24">
@@ -34,23 +43,30 @@
                 SALE
             </div>
         @endif
+
+        {{-- Your Product Badge for seller's own products --}}
+        @if($isOwnProduct)
+            <div class="absolute top-4 left-4 bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                Your Product
+            </div>
+        @endif
     </div>
 
     {{-- Product Info --}}
     <div class="px-6 py-5 text-center space-y-2">
         {{-- Department/Category --}}
-        <h5 class="text-sm font-bold text-primary-500 uppercase tracking-wide">
+        <h5 class="text-xs font-medium text-gray-500 uppercase tracking-wider">
             {{ $product->productCategory->name ?? 'Graphic Design' }}
         </h5>
 
         {{-- Product Name --}}
-        <h3 class="text-base font-bold text-text-primary line-clamp-2 min-h-[3rem]">
+        <h3 class="text-base font-bold text-gray-900 line-clamp-2 min-h-[3rem]">
             {{ $product->name }}
         </h3>
 
         {{-- Store Name (subtle) --}}
         @if($product->store)
-            <p class="text-xs text-text-muted">
+            <p class="text-xs text-gray-500">
                 {{ $product->store->name }}
             </p>
         @endif
@@ -58,25 +74,17 @@
         {{-- Price --}}
         <div class="flex items-center justify-center gap-2">
             @if(isset($product->original_price) && $product->original_price > $product->price)
-                <span class="text-sm font-bold text-text-muted line-through">
+                <span class="text-sm font-bold text-gray-400 line-through">
                     ${{ number_format($product->original_price, 2) }}
                 </span>
                 <span class="text-base font-bold text-success-500">
                     ${{ number_format($product->price, 2) }}
                 </span>
             @else
-                <span class="text-base font-bold text-text-secondary">
+                <span class="text-lg font-bold text-gray-900">
                     Rp {{ number_format($product->price, 0, ',', '.') }}
                 </span>
             @endif
-        </div>
-
-        {{-- Color Swatches --}}
-        <div class="flex items-center justify-center gap-1.5 pt-2">
-            <span class="w-4 h-4 rounded-full bg-primary-500 border border-gray-200 cursor-pointer hover:scale-110 transition"></span>
-            <span class="w-4 h-4 rounded-full bg-success-500 border border-gray-200 cursor-pointer hover:scale-110 transition"></span>
-            <span class="w-4 h-4 rounded-full bg-warning-500 border border-gray-200 cursor-pointer hover:scale-110 transition"></span>
-            <span class="w-4 h-4 rounded-full bg-gray-800 border border-gray-200 cursor-pointer hover:scale-110 transition"></span>
         </div>
 
         {{-- Stock Indicator --}}

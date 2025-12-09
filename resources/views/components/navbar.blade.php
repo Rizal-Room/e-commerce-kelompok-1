@@ -1,22 +1,22 @@
 {{-- Bandage Style Navbar --}}
-<nav class="bg-white shadow-sm" x-data="{ mobileMenuOpen: false }">
+<nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ mobileMenuOpen: false }">
     {{-- Main Navigation --}}
     <div class="border-b border-gray-200">
         <div class="container-custom">
             <div class="flex items-center justify-between h-16">
                 {{-- Logo --}}
                 <a href="{{ route('home') }}" class="flex-shrink-0">
-                    <h1 class="text-2xl font-extrabold text-text-primary">Bandage</h1>
+                    <h1 class="text-2xl font-black text-black tracking-tight font-serif">Fayren</h1>
                 </a>
 
                 {{-- Desktop Menu --}}
                 <nav class="hidden lg:flex items-center gap-8">
-                    <a href="{{ route('home') }}" class="text-text-secondary hover:text-primary-500 font-bold text-sm transition">Home</a>
-                    <a href="{{ route('products.index') }}" class="text-text-secondary hover:text-primary-500 font-bold text-sm transition">Shop</a>
+                    <a href="{{ route('home') }}" class="text-gray-500 hover:text-black font-bold text-sm transition-colors">Home</a>
+                    <a href="{{ route('products.index') }}" class="text-gray-500 hover:text-black font-bold text-sm transition-colors">Shop</a>
                     
                     {{-- Categories Dropdown --}}
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                        <button @click="open = !open" class="text-text-secondary hover:text-primary-500 font-bold text-sm transition flex items-center gap-1">
+                        <button @click="open = !open" class="text-gray-500 hover:text-black font-bold text-sm transition-colors flex items-center gap-1">
                             Categories
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -70,8 +70,8 @@
                                 name="q" 
                                 value="{{ request('q') }}"
                                 placeholder="Search..."
-                                class="pl-4 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 w-64">
-                            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500">
+                                class="pl-4 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-black focus:border-black w-64 bg-gray-50">
+                            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
@@ -80,7 +80,7 @@
                     </div>
 
                     {{-- Auth & Actions --}}
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-8">
                         {{-- Auth Links --}}
                         @auth
                             {{-- User Dropdown --}}

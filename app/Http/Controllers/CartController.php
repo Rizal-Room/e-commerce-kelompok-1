@@ -29,6 +29,16 @@ class CartController extends Controller
 
         $product = \App\Models\Product::with('productImages')->findOrFail($request->product_id);
 
+        // Check if user is trying to buy their own product
+        if (auth()->check() && auth()->user()->store) {
+            if ($product->store_id === auth()->user()->store->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak dapat membeli produk dari toko Anda sendiri'
+                ], 403);
+            }
+        }
+
         // Check stock
         if ($product->stock < $request->quantity) {
             return response()->json([

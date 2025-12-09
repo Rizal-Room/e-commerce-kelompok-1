@@ -18,7 +18,13 @@ class ProductController extends Controller
 
         // Category filter
         if ($request->filled('category')) {
-            $query->where('product_category_id', $request->category);
+            $catId = $request->category;
+            $query->where(function($q) use ($catId) {
+                $q->where('product_category_id', $catId)
+                  ->orWhereHas('productCategory', function($subQ) use ($catId) {
+                      $subQ->where('parent_id', $catId);
+                  });
+            });
         }
 
         // Search
@@ -29,11 +35,33 @@ class ProductController extends Controller
             });
         }
 
-        // Price filter
-        if ($request->filled('min_price')) {
+        // Price filter - support multiple ranges via checkboxes
+        if ($request->filled('price_ranges')) {
+            $ranges = is_array($request->price_ranges) ? $request->price_ranges : [$request->price_ranges];
+            $query->where(function($q) use ($ranges) {
+                foreach ($ranges as $range) {
+                    $parts = explode('-', $range);
+                    if (count($parts) === 2) {
+                        $min = (int)$parts[0];
+                        $max = (int)$parts[1];
+                        if ($max === 0) {
+                            // Unlimited max (e.g., 1000000-0 means >= 1000000)
+                            $q->orWhere('price', '>=', $min);
+                        } else {
+                            $q->orWhere(function($subQ) use ($min, $max) {
+                                $subQ->where('price', '>=', $min)->where('price', '<=', $max);
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Legacy support for old min/max price params (in case used elsewhere)
+        if ($request->filled('min_price') && !$request->filled('price_ranges')) {
             $query->where('price', '>=', $request->min_price);
         }
-        if ($request->filled('max_price')) {
+        if ($request->filled('max_price') && !$request->filled('price_ranges')) {
             $query->where('price', '<=', $request->max_price);
         }
 

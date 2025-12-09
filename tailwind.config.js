@@ -16,70 +16,70 @@ export default {
                 display: ['Montserrat', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                // Bandage Primary - Bright Blue
+                // Monochrome Primary - Black
                 primary: {
-                    50: '#e6f7ff',
-                    100: '#b3e5ff',
-                    200: '#80d4ff',
-                    300: '#4dc2ff',
-                    400: '#1ab1ff',
-                    500: '#23A6F0', // Bandage Blue
-                    600: '#1a8fcc',
-                    700: '#1478a9',
-                    800: '#0d6085',
-                    900: '#074962',
+                    50: '#f9fafb',
+                    100: '#f3f4f6',
+                    200: '#e5e7eb',
+                    300: '#d1d5db',
+                    400: '#9ca3af',
+                    500: '#000000', // Pure Black
+                    600: '#1f2937',
+                    700: '#111827',
+                    800: '#000000',
+                    900: '#000000',
                 },
-                // Bandage Secondary - Teal Green
+                // Monochrome Secondary - Gray
                 secondary: {
-                    50: '#e6f5f2',
-                    100: '#b3e0d9',
-                    200: '#80cbbf',
-                    300: '#4db6a6',
-                    400: '#1aa18c',
-                    500: '#23856D', // Bandage Teal
-                    600: '#1c6a57',
-                    700: '#165041',
-                    800: '#0f352b',
-                    900: '#091b15',
+                    50: '#f9fafb',
+                    100: '#f3f4f6',
+                    200: '#e5e7eb',
+                    300: '#d1d5db',
+                    400: '#9ca3af',
+                    500: '#6b7280', // Gray 500
+                    600: '#4b5563',
+                    700: '#374151',
+                    800: '#1f2937',
+                    900: '#111827',
                 },
-                // Success - Green
+                // Success - Green (Desaturated or kept for UX, but muting slightly for elegance)
                 success: {
-                    50: '#e8f7f0',
-                    100: '#bfe9d5',
-                    200: '#95dbb9',
-                    300: '#6ccd9d',
-                    400: '#42bf81',
-                    500: '#2DC071', // Bandage Success Green
-                    600: '#249a5a',
-                    700: '#1b7443',
-                    800: '#124d2d',
-                    900: '#092716',
+                    50: '#f0fdf4',
+                    100: '#dcfce7',
+                    200: '#bbf7d0',
+                    300: '#86efac',
+                    400: '#4ade80',
+                    500: '#22c55e',
+                    600: '#16a34a',
+                    700: '#15803d',
+                    800: '#166534',
+                    900: '#14532d',
                 },
-                // Warning - Orange
+                // Warning - Orange (Kept for UX)
                 warning: {
-                    50: '#fef3ea',
-                    100: '#fcdec3',
-                    200: '#fac99c',
-                    300: '#f8b475',
-                    400: '#f69f4e',
-                    500: '#E77C40', // Bandage Orange
-                    600: '#c5632d',
-                    700: '#944a22',
-                    800: '#633116',
-                    900: '#32180b',
+                    50: '#fff7ed',
+                    100: '#ffedd5',
+                    200: '#fed7aa',
+                    300: '#fdba74',
+                    400: '#fb923c',
+                    500: '#f97316',
+                    600: '#ea580c',
+                    700: '#c2410c',
+                    800: '#9a3412',
+                    900: '#7c2d12',
                 },
-                // Danger - Red
+                // Danger - Red (Kept for UX)
                 danger: {
-                    50: '#feeaea',
-                    100: '#fbc3c3',
-                    200: '#f89c9c',
-                    300: '#f57575',
-                    400: '#f24e4e',
-                    500: '#E74040', // Bandage Red
-                    600: '#c23030',
-                    700: '#912424',
-                    800: '#611818',
-                    900: '#300c0c',
+                    50: '#fef2f2',
+                    100: '#fee2e2',
+                    200: '#fecaca',
+                    300: '#fca5a5',
+                    400: '#f87171',
+                    500: '#ef4444',
+                    600: '#dc2626',
+                    700: '#b91c1c',
+                    800: '#991b1b',
+                    900: '#7f1d1d',
                 },
             },
             spacing: {
