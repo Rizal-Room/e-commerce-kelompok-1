@@ -91,36 +91,102 @@
 @push('scripts')
 <script>
     function addToCart(productId) {
+        // Optimistic UI Update
+        const desktopCountEl = document.getElementById('cartCountDesktop');
+        const mobileCountEl = document.getElementById('cartCountMobile');
+        const desktopWrapper = document.getElementById('cartCountWrapper');
+        
+        let previousCount = 0;
+        
+        // Get current count
+        if (desktopCountEl) {
+            previousCount = parseInt(desktopCountEl.textContent || '0');
+        } else if (mobileCountEl) {
+            previousCount = parseInt(mobileCountEl.textContent || '0');
+        }
+
+        const newCount = previousCount + 1; // Always adds 1 from wishlist
+        
+        // Update Elements
+        if (desktopCountEl) desktopCountEl.textContent = newCount;
+        if (mobileCountEl) mobileCountEl.textContent = newCount;
+        
+        // Show wrapper if it was hidden (count > 0)
+        if (newCount > 0) {
+            if (desktopWrapper) desktopWrapper.classList.remove('hidden');
+            if (mobileCountEl) mobileCountEl.classList.remove('hidden');
+        }
+        
+        // Animate
+        if (desktopCountEl) {
+            desktopCountEl.parentElement.classList.add('scale-125');
+            setTimeout(() => desktopCountEl.parentElement.classList.remove('scale-125'), 200);
+        }
+        if (mobileCountEl) {
+            mobileCountEl.classList.add('scale-125');
+            setTimeout(() => mobileCountEl.classList.remove('scale-125'), 200);
+        }
+
+        // Show Success Toast Immediately
+        showToast('Added to Bag', 'success');
+
         fetch('{{ route("cart.add") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 product_id: productId,
                 quantity: 1
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                throw new Error('Unauthorized');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                showToast(data.message, 'success');
+                // Sync with actual server count
+                if (data.cart_count !== undefined) {
+                    if (desktopCountEl) desktopCountEl.textContent = data.cart_count;
+                    if (mobileCountEl) mobileCountEl.textContent = data.cart_count;
+                }
             } else {
-                showToast(data.message, 'error');
+                // Revert on failure
+                if (desktopCountEl) desktopCountEl.textContent = previousCount;
+                if (mobileCountEl) mobileCountEl.textContent = previousCount;
+                
+                if (previousCount === 0) {
+                    if (desktopWrapper) desktopWrapper.classList.add('hidden');
+                    if (mobileCountEl) mobileCountEl.classList.add('hidden');
+                }
+                
+                showToast(data.message || 'Failed to add', 'error');
+            }
+        })
+        .catch(error => {
+            if (error.message !== 'Unauthorized') {
+                console.error('Error:', error);
+                
+                // Revert on error
+                if (desktopCountEl) desktopCountEl.textContent = previousCount;
+                if (mobileCountEl) mobileCountEl.textContent = previousCount;
+                
+                if (previousCount === 0) {
+                    if (desktopWrapper) desktopWrapper.classList.add('hidden');
+                    if (mobileCountEl) mobileCountEl.classList.add('hidden');
+                }
+
+                showToast('An error occurred', 'error');
             }
         });
     }
 
-    function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `px-6 py-4 rounded-lg shadow-medium animate-slide-up ${
-            type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white font-medium`;
-        toast.textContent = message;
-        
-        document.getElementById('toast-container').appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
+
 </script>
 @endpush

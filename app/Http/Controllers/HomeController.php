@@ -17,7 +17,7 @@ class HomeController extends Controller
         $featuredProducts = Product::with(['store', 'productImages', 'productReviews'])
             ->where('stock', '>', 0)
             ->latest()
-            ->take(8)
+            ->take(4)
             ->get();
 
         // Get main categories (for hero category cards)

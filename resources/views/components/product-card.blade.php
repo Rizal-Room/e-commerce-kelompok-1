@@ -26,7 +26,7 @@
 
         {{-- Wishlist Button (top right) --}}
         <button 
-            onclick="event.stopPropagation(); {{ $isOwnProduct ? 'return false;' : 'toggleWishlist(' . $product->id . ')' }}" 
+            onclick="event.stopPropagation(); {{ $isOwnProduct ? 'return false;' : 'toggleWishlist(' . $product->id . ', this)' }}" 
             class="absolute top-4 right-4 p-2 rounded-full bg-white shadow-md {{ $isOwnProduct ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110' }} transition-all duration-200 z-10"
             {{ $isOwnProduct ? 'disabled' : '' }}>
             <svg class="w-5 h-5 wishlist-icon {{ in_array($product->id, session('wishlist', [])) ? 'fill-red-500 text-red-500' : 'text-gray-600' }}" 

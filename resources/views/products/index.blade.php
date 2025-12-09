@@ -127,28 +127,143 @@
             </div>
 
             {{-- Products Grid --}}
-            @if($products->count() > 0)
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    @foreach($products as $product)
-                        <x-product-card :product="$product" />
-                    @endforeach
-                </div>
-
-                {{-- Pagination --}}
-                <div class="mt-8">
-                    {{ $products->appends(request()->query())->links() }}
-                </div>
-            @else
-                <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                    </svg>
-                    <h3 class="text-lg font-bold text-gray-700 mb-2">No products found</h3>
-                    <p class="text-gray-500 mb-4">Try adjusting your filters or search criteria</p>
-                    <a href="{{ route('products.index') }}" class="btn-primary inline-block">Clear All Filters</a>
-                </div>
-            @endif
+            {{-- Products Grid --}}
+            <div id="productGridContainer">
+                @include('components.product-grid', ['products' => $products])
+            </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    function filterProducts(url = null) {
+        const form = document.getElementById('priceFilterForm');
+        const formData = new FormData(form);
+        
+        // Add sort to formData
+        const sortSelect = document.querySelector('select[name="sort"]');
+        if (sortSelect) {
+            formData.append('sort', sortSelect.value);
+        }
+
+        // Build Query String
+        const params = new URLSearchParams(formData);
+        
+        // If specific URL provided (pagination), use allowed params from it or merge
+        let fetchUrl = url || `{{ route('products.index') }}?${params.toString()}`;
+
+        // Parse params from the actual URL we are fetching to ensure we have the latest category
+        const fetchUrlObj = new URL(fetchUrl, window.location.origin);
+        const newParams = fetchUrlObj.searchParams;
+        const activeCategory = newParams.get('category');
+
+        // Update hidden category input so subsequent form submissions (price/sort) use the new category
+        const categoryInput = document.querySelector('input[name="category"]');
+        if (categoryInput) {
+            categoryInput.value = activeCategory || '';
+        }
+
+        // Show loading state
+        document.getElementById('productGridContainer').style.opacity = '0.5';
+
+        fetch(fetchUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('productGridContainer').innerHTML = html;
+            document.getElementById('productGridContainer').style.opacity = '1';
+            
+            // Update URL
+            window.history.pushState({}, '', fetchUrl);
+
+            // Update Sidebar Active State
+            updateSidebarActiveState(activeCategory);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('productGridContainer').style.opacity = '1';
+        });
+    }
+
+    function updateSidebarActiveState(activeCategoryId) {
+        const sidebar = document.querySelector('aside');
+        if (!sidebar) return;
+
+        const links = sidebar.querySelectorAll('a');
+        links.forEach(link => {
+            const url = new URL(link.href, window.location.origin);
+            const linkCategoryId = url.searchParams.get('category');
+            
+            // Determine if this is the active link
+            // "All Products" usually has no category param
+            const isActive = (activeCategoryId && linkCategoryId === activeCategoryId) || 
+                             (!activeCategoryId && !linkCategoryId && link.pathname === '{{ route("products.index", [], false) }}' && !link.search);
+
+            if (isActive) {
+                link.classList.remove('text-gray-600', 'hover:text-primary-500');
+                link.classList.add('text-primary-500', 'font-bold');
+            } else {
+                link.classList.remove('text-primary-500', 'font-bold');
+                link.classList.add('text-gray-600', 'hover:text-primary-500');
+            }
+        });
+    }
+
+    // Attach listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        // Event Delegation for Sort Select
+        document.getElementById('productGridContainer').addEventListener('change', (e) => {
+            if (e.target.name === 'sort') {
+                filterProducts();
+            }
+        });
+
+        // Price checkboxes
+        const priceCheckboxes = document.querySelectorAll('input[name="price_ranges[]"]');
+        priceCheckboxes.forEach(cb => {
+            cb.removeAttribute('onchange');
+            cb.addEventListener('change', () => filterProducts());
+        });
+
+        // Sidebar links interception (Categories, All Prices)
+        const sidebar = document.querySelector('aside');
+        if (sidebar) {
+            sidebar.addEventListener('click', (e) => {
+                const link = e.target.closest('a');
+                if (link && link.href && !link.hasAttribute('target')) {
+                    e.preventDefault();
+                    filterProducts(link.href);
+                    // Optional: Scroll to top
+                    document.getElementById('productGridContainer').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        // Pagination links interception
+        document.getElementById('productGridContainer').addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                if (link && link.href && link.href.includes('page=')) {
+                    e.preventDefault();
+                    filterProducts(link.href);
+                    document.getElementById('productGridContainer').scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

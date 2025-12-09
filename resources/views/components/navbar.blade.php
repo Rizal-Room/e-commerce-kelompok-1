@@ -11,8 +11,8 @@
 
                 {{-- Desktop Menu --}}
                 <nav class="hidden lg:flex items-center gap-8">
-                    <a href="{{ route('home') }}" class="text-gray-500 hover:text-black font-bold text-sm transition-colors">Home</a>
-                    <a href="{{ route('products.index') }}" class="text-gray-500 hover:text-black font-bold text-sm transition-colors">Shop</a>
+                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-black font-bold' : 'text-gray-500 hover:text-black font-medium' }} text-sm transition-colors">Home</a>
+                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.index') || request()->routeIs('products.show') ? 'text-black font-bold' : 'text-gray-500 hover:text-black font-medium' }} text-sm transition-colors">Shop</a>
                     
                     {{-- Categories Dropdown --}}
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">
@@ -24,29 +24,21 @@
                         </button>
                         
                         <div x-show="open" x-cloak class="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                            {{-- Men Category --}}
-                            <div class="px-4 py-2">
-                                <a href="{{ route('products.index', ['category' => 1]) }}" class="font-bold text-gray-900 hover:text-primary-500">Men</a>
-                                <div class="ml-4 mt-1 space-y-1">
-                                    <a href="{{ route('products.index', ['category' => 2]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Shirts</a>
-                                    <a href="{{ route('products.index', ['category' => 3]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Pants</a>
-                                    <a href="{{ route('products.index', ['category' => 4]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Jackets</a>
-                                    <a href="{{ route('products.index', ['category' => 5]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Shoes</a>
-                                    <a href="{{ route('products.index', ['category' => 6]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Accessories</a>
+                            @foreach($globalCategories as $category)
+                                <div class="px-4 py-2">
+                                    <a href="{{ route('products.index', ['category' => $category->id]) }}" class="font-bold text-gray-900 hover:text-primary-500">{{ $category->name }}</a>
+                                    @if($category->children->count() > 0)
+                                        <div class="ml-4 mt-1 space-y-1">
+                                            @foreach($category->children as $child)
+                                                <a href="{{ route('products.index', ['category' => $child->id]) }}" class="block text-sm text-gray-600 hover:text-primary-500">{{ $child->name }}</a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
-                            <hr class="my-2">
-                            {{-- Women Category --}}
-                            <div class="px-4 py-2">
-                                <a href="{{ route('products.index', ['category' => 7]) }}" class="font-bold text-gray-900 hover:text-primary-500">Women</a>
-                                <div class="ml-4 mt-1 space-y-1">
-                                    <a href="{{ route('products.index', ['category' => 8]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Dresses</a>
-                                    <a href="{{ route('products.index', ['category' => 9]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Tops</a>
-                                    <a href="{{ route('products.index', ['category' => 10]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Pants</a>
-                                    <a href="{{ route('products.index', ['category' => 11]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Shoes</a>
-                                    <a href="{{ route('products.index', ['category' => 12]) }}" class="block text-sm text-gray-600 hover:text-primary-500">Accessories</a>
-                                </div>
-                            </div>
+                                @if(!$loop->last)
+                                    <hr class="my-2">
+                                @endif
+                            @endforeach
                         </div>
                     </div>
                     
@@ -144,8 +136,11 @@
                             </svg>
                             @php $cartCount = array_sum(array_column(session('cart', []), 'quantity')); @endphp
                             @if($cartCount > 0)
-                                <span class="hidden lg:inline text-sm font-bold">({{ $cartCount }})</span>
-                                <span class="lg:hidden absolute -top-2 -right-2 bg-primary-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
+                                <span class="hidden lg:inline text-sm font-bold">(<span id="cartCountDesktop">{{ $cartCount }}</span>)</span>
+                                <span id="cartCountMobile" class="lg:hidden absolute -top-2 -right-2 bg-primary-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{{ $cartCount }}</span>
+                            @else
+                                <span class="hidden lg:inline text-sm font-bold hidden" id="cartCountWrapper">(<span id="cartCountDesktop">0</span>)</span>
+                                <span id="cartCountMobile" class="lg:hidden absolute -top-2 -right-2 bg-primary-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
                             @endif
                         </a>
                     </div>
@@ -195,8 +190,25 @@
                 {{-- Categories --}}
                 <div class="py-2">
                     <p class="text-xs font-bold text-gray-500 uppercase mb-2">Categories</p>
-                    <a href="{{ route('products.index', ['category' => 1]) }}" class="block text-text-secondary hover:text-primary-500 font-bold text-sm py-1 transition">Men</a>
-                    <a href="{{ route('products.index', ['category' => 7]) }}" class="block text-text-secondary hover:text-primary-500 font-bold text-sm py-1 transition">Women</a>
+                    @foreach($globalCategories as $category)
+                        <div x-data="{ expanded: false }">
+                            <div class="flex items-center justify-between">
+                                <a href="{{ route('products.index', ['category' => $category->id]) }}" class="block text-text-secondary hover:text-primary-500 font-bold text-sm py-1 transition">{{ $category->name }}</a>
+                                @if($category->children->count() > 0)
+                                    <button @click="expanded = !expanded" class="p-1 text-gray-400">
+                                        <svg class="w-4 h-4 transform transition-transform" :class="{'rotate-180': expanded}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                @endif
+                            </div>
+                            @if($category->children->count() > 0)
+                                <div x-show="expanded" x-cloak class="ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
+                                     @foreach($category->children as $child)
+                                        <a href="{{ route('products.index', ['category' => $child->id]) }}" class="block text-gray-500 hover:text-primary-500 text-sm py-1">{{ $child->name }}</a>
+                                     @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
                 </div>
                 
                 @auth

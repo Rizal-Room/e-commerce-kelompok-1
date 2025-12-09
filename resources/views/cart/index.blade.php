@@ -23,7 +23,7 @@
             <!-- Cart Items -->
             <div class="lg:col-span-2 space-y-4">
                 @foreach($cart as $productId => $item)
-                    <div class="card p-6">
+                    <div class="card p-6" id="cart-item-{{ $productId }}">
                         <div class="flex gap-6">
                             <!-- Product Image -->
                             <a href="{{ route('products.show', $item['slug']) }}" class="flex-shrink-0">
@@ -58,45 +58,36 @@
                             <!-- Quantity & Actions -->
                             <div class="flex flex-col items-end justify-between">
                                 <!-- Quantity Adjuster -->
-                                <form action="{{ route('cart.update', $productId) }}" method="POST" class="flex items-center border border-gray-300 rounded-lg">
-                                    @csrf
-                                    @method('PATCH')
-                                    
+                                <div class="flex items-center border border-gray-300 rounded-lg">
                                     <button 
-                                        type="submit" 
-                                        name="quantity" 
-                                        value="{{ max(1, $item['quantity'] - 1) }}"
+                                        type="button" 
+                                        onclick="updateCart({{ $productId }}, {{ $item['quantity'] - 1 }})"
                                         class="px-3 py-1 hover:bg-gray-50 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
                                         </svg>
                                     </button>
                                     
-                                    <span class="w-12 text-center font-medium">{{ $item['quantity'] }}</span>
+                                    <span class="w-12 text-center font-medium" id="qty-{{ $productId }}">{{ $item['quantity'] }}</span>
                                     
                                     <button 
-                                        type="submit" 
-                                        name="quantity" 
-                                        value="{{ $item['quantity'] + 1 }}"
+                                        type="button" 
+                                        onclick="updateCart({{ $productId }}, {{ $item['quantity'] + 1 }})"
                                         class="px-3 py-1 hover:bg-gray-50 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                         </svg>
                                     </button>
-                                </form>
+                                </div>
 
                                 <!-- Remove Button -->
-                                <form action="{{ route('cart.remove', $productId) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-sm text-red-600 hover:text-red-700 transition-colors">
-                                        Remove
-                                    </button>
-                                </form>
+                                <button type="button" onclick="removeFromCart({{ $productId }})" class="text-sm text-red-600 hover:text-red-700 transition-colors">
+                                    Remove
+                                </button>
 
                                 <!-- Subtotal -->
                                 <p class="text-sm text-gray-600 mt-2">
-                                    Subtotal: <span class="font-semibold">Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</span>
+                                    Subtotal: <span class="font-semibold" id="subtotal-{{ $productId }}">Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}</span>
                                 </p>
                             </div>
                         </div>
@@ -120,14 +111,14 @@
                     
                     <div class="space-y-4 mb-6">
                         <div class="flex justify-between text-gray-600">
-                            <span>Subtotal ({{ array_sum(array_column($cart, 'quantity')) }} items)</span>
-                            <span class="font-medium">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                            <span>Subtotal (<span id="total-items">{{ array_sum(array_column($cart, 'quantity')) }}</span> items)</span>
+                            <span class="font-medium" id="summary-subtotal">Rp {{ number_format($total, 0, ',', '.') }}</span>
                         </div>
                         
                         <div class="border-t border-gray-200 pt-4">
                             <div class="flex justify-between text-lg font-bold">
                                 <span>Total</span>
-                                <span class="text-primary-900">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                                <span class="text-primary-900" id="summary-total">Rp {{ number_format($total, 0, ',', '.') }}</span>
                             </div>
                         </div>
                     </div>
@@ -148,6 +139,95 @@
                 </div>
             </div>
         </div>
+
+<script>
+function updateCart(productId, newQuantity) {
+    if (newQuantity < 0) return; 
+
+    fetch(`/cart/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-HTTP-Method-Override': 'PATCH'
+        },
+        body: JSON.stringify({
+            quantity: newQuantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (newQuantity <= 0 || data.message === 'Product removed from cart') {
+                document.getElementById(`cart-item-${productId}`).remove();
+                if (data.is_empty) location.reload();
+            } else {
+                document.getElementById(`qty-${productId}`).textContent = data.quantity;
+                document.getElementById(`subtotal-${productId}`).textContent = 'Rp ' + data.item_subtotal;
+                
+                const btnMinus = document.querySelector(`#cart-item-${productId} button[onclick^="updateCart(${productId},"]`);
+                const btnPlus = document.querySelectorAll(`#cart-item-${productId} button[onclick^="updateCart(${productId},"]`)[1];
+                
+                btnMinus.setAttribute('onclick', `updateCart(${productId}, ${data.quantity - 1})`);
+                btnPlus.setAttribute('onclick', `updateCart(${productId}, ${data.quantity + 1})`);
+            }
+            
+            document.getElementById('summary-subtotal').textContent = 'Rp ' + data.total;
+            document.getElementById('summary-total').textContent = 'Rp ' + data.total;
+            document.getElementById('total-items').textContent = data.cart_count;
+            
+            const navCount = document.getElementById('cartCount');
+            if(navCount) {
+                navCount.textContent = data.cart_count;
+                navCount.classList.remove('hidden');
+                if(data.cart_count === 0) navCount.classList.add('hidden');
+            }
+
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function removeFromCart(productId) {
+    if(!confirm('Are you sure you want to remove this item?')) return;
+
+    fetch(`/cart/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-HTTP-Method-Override': 'DELETE'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`cart-item-${productId}`).remove();
+            
+            document.getElementById('summary-subtotal').textContent = 'Rp ' + data.total;
+            document.getElementById('summary-total').textContent = 'Rp ' + data.total;
+            document.getElementById('total-items').textContent = data.cart_count;
+            
+            const navCount = document.getElementById('cartCount');
+            if(navCount) {
+                navCount.textContent = data.cart_count;
+                navCount.classList.remove('hidden');
+                if(data.cart_count === 0) navCount.classList.add('hidden');
+            }
+
+            if (data.is_empty) location.reload();
+        }
+    });
+}
+</script>
     @endif
 </div>
 @endsection

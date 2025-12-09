@@ -118,16 +118,7 @@
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-                <!-- Mock Color Selector -->
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-3">Color: <span class="text-gray-500 font-normal">Royal Brown</span></h3>
-                    <div class="flex gap-3">
-                        <button type="button" class="w-8 h-8 rounded-full border border-gray-300 ring-2 ring-black ring-offset-2" style="background-color: #5D4037;"></button>
-                        <button type="button" class="w-8 h-8 rounded-full border border-gray-300 hover:ring-2 hover:ring-gray-300 hover:ring-offset-2 transition-all" style="background-color: #E0E0E0;"></button>
-                        <button type="button" class="w-8 h-8 rounded-full border border-gray-300 hover:ring-2 hover:ring-gray-300 hover:ring-offset-2 transition-all" style="background-color: #1E3A8A;"></button>
-                        <button type="button" class="w-8 h-8 rounded-full border border-gray-300 hover:ring-2 hover:ring-gray-300 hover:ring-offset-2 transition-all" style="background-color: #111827;"></button>
-                    </div>
-                </div>
+
 
                 <!-- Mock Size Selector -->
                 <div>
@@ -248,7 +239,7 @@
                             <div class="mt-4 space-y-2">
                                 @foreach(range(5, 1) as $star)
                                     <label class="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" class="rounded border-gray-300 text-black focus:ring-black">
+                                        <input type="checkbox" value="{{ $star }}" class="review-filter-checkbox rounded border-gray-300 text-black focus:ring-black">
                                         <span class="text-sm text-gray-600">{{ $star }} Stars</span>
                                     </label>
                                 @endforeach
@@ -272,7 +263,7 @@
                 @if($product->productReviews->count() > 0)
                     <div class="space-y-8">
                         @foreach($product->productReviews as $review)
-                            <div class="border-b border-gray-100 pb-8 last:border-0">
+                            <div class="review-item border-b border-gray-100 pb-8 last:border-0" data-rating="{{ $review->rating }}">
                                 <div class="flex items-start justify-between mb-4">
                                     <div class="flex text-yellow-400 text-sm">
                                         @for($i = 1; $i <= 5; $i++)
@@ -377,7 +368,51 @@ document.getElementById('addToCartForm')?.addEventListener('submit', function(e)
     submitBtn.disabled = true;
     
     const formData = new FormData(this);
+    const quantity = parseInt(formData.get('quantity'));
+
+    // Optimistic UI Update
+    const desktopCountEl = document.getElementById('cartCountDesktop');
+    const mobileCountEl = document.getElementById('cartCountMobile');
+    const desktopWrapper = document.getElementById('cartCountWrapper');
     
+    let previousCount = 0;
+    
+    // Get current count from either element
+    if (desktopCountEl) {
+        previousCount = parseInt(desktopCountEl.textContent || '0');
+    } else if (mobileCountEl) {
+        previousCount = parseInt(mobileCountEl.textContent || '0');
+    }
+
+    const newCount = previousCount + quantity;
+    
+    // Update Elements
+    if (desktopCountEl) desktopCountEl.textContent = newCount;
+    if (mobileCountEl) mobileCountEl.textContent = newCount;
+    
+    // Show if hidden
+    if (newCount > 0) {
+        if (desktopWrapper) desktopWrapper.classList.remove('hidden');
+        if (mobileCountEl) mobileCountEl.classList.remove('hidden');
+        
+        // Mobile badge specific styling if needed, but classlist remove hidden should suffice based on blade
+    }
+    
+    // Animate
+    if (desktopCountEl) {
+        desktopCountEl.parentElement.classList.add('scale-125'); // Animate the wrapper ()
+        setTimeout(() => desktopCountEl.parentElement.classList.remove('scale-125'), 200);
+    }
+    if (mobileCountEl) {
+        mobileCountEl.classList.add('scale-125');
+        setTimeout(() => mobileCountEl.classList.remove('scale-125'), 200);
+    }
+
+    // Show success message immediately
+    if (typeof showToast === 'function') {
+        showToast('Added to Bag', 'success');
+    }
+
     fetch('{{ route("cart.add") }}', {
         method: 'POST',
         headers: {
@@ -387,32 +422,105 @@ document.getElementById('addToCartForm')?.addEventListener('submit', function(e)
         },
         body: JSON.stringify({
             product_id: formData.get('product_id'),
-            quantity: formData.get('quantity')
+            quantity: quantity
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Unauthorized');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            // Update cart count in navbar
-            const cartCount = document.getElementById('cartCount');
-            if (cartCount) {
-                cartCount.textContent = data.cart_count;
-                cartCount.classList.remove('hidden');
+            // Sync with actual server count
+            if (desktopCountEl) desktopCountEl.textContent = data.cart_count;
+            if (mobileCountEl) mobileCountEl.textContent = data.cart_count;
+            
+            if (data.cart_count > 0) {
+                 if (desktopWrapper) desktopWrapper.classList.remove('hidden');
+                 if (mobileCountEl) mobileCountEl.classList.remove('hidden');
             }
-            // Optional: Toast notification
-            alert('Added to Bag');
         } else {
-            alert(data.message || 'Failed to add product to cart');
+            // Revert
+            if (desktopCountEl) desktopCountEl.textContent = previousCount;
+            if (mobileCountEl) mobileCountEl.textContent = previousCount;
+            
+            if (previousCount === 0) {
+                if (desktopWrapper) desktopWrapper.classList.add('hidden');
+                if (mobileCountEl) mobileCountEl.classList.add('hidden');
+            }
+
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Failed to add product to cart', 'error');
+            } else {
+                alert(data.message || 'Failed to add product to cart');
+            }
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while adding to cart');
+        if (error.message !== 'Unauthorized') {
+             console.error('Error:', error);
+             // Revert
+            if (desktopCountEl) desktopCountEl.textContent = previousCount;
+            if (mobileCountEl) mobileCountEl.textContent = previousCount;
+            
+            if (previousCount === 0) {
+                if (desktopWrapper) desktopWrapper.classList.add('hidden');
+                if (mobileCountEl) mobileCountEl.classList.add('hidden');
+            }
+
+             if (typeof showToast === 'function') {
+                showToast('An error occurred while adding to cart', 'error');
+             } else {
+                alert('An error occurred');
+             }
+        }
     })
     .finally(() => {
         submitBtn.innerText = originalText;
         submitBtn.disabled = false;
     });
+});
+// Review Filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.review-filter-checkbox');
+    const reviews = document.querySelectorAll('.review-item');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // If checking a box, uncheck all others
+            if (this.checked) {
+                checkboxes.forEach(cb => {
+                    if (cb !== this) cb.checked = false;
+                });
+            }
+            filterReviews();
+        });
+    });
+
+    function filterReviews() {
+        // Get checked rating (should only be one or zero)
+        const checkedCheckbox = Array.from(checkboxes).find(cb => cb.checked);
+        const checkedRating = checkedCheckbox ? checkedCheckbox.value : null;
+
+        // If no checkbox is checked, show all
+        if (!checkedRating) {
+            reviews.forEach(review => review.classList.remove('hidden'));
+            return;
+        }
+
+        // Show/Hide reviews based on rating
+        reviews.forEach(review => {
+            const rating = review.getAttribute('data-rating');
+            if (rating === checkedRating) {
+                review.classList.remove('hidden');
+            } else {
+                review.classList.add('hidden');
+            }
+        });
+    }
 });
 </script>
 @endsection

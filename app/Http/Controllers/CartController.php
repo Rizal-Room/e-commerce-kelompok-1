@@ -90,8 +90,13 @@ class CartController extends Controller
     public function update(Request $request, $productId)
     {
         $request->validate([
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:0',
         ]);
+
+        // If quantity is 0 or less, remove the item
+        if ($request->quantity <= 0) {
+            return $this->remove($productId);
+        }
 
         $cart = session('cart', []);
 
@@ -99,13 +104,35 @@ class CartController extends Controller
             $product = \App\Models\Product::findOrFail($productId);
             
             if ($product->stock < $request->quantity) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Insufficient stock'], 400);
+                }
                 return redirect()->back()->with('error', 'Insufficient stock');
             }
 
             $cart[$productId]['quantity'] = $request->quantity;
             session(['cart' => $cart]);
 
+            if ($request->wantsJson() || $request->ajax()) {
+                $itemSubtotal = $product->price * $request->quantity;
+                $total = $this->calculateTotal($cart);
+                $cartCount = array_sum(array_column($cart, 'quantity'));
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cart updated',
+                    'quantity' => $request->quantity,
+                    'item_subtotal' => number_format($itemSubtotal, 0, ',', '.'),
+                    'total' => number_format($total, 0, ',', '.'),
+                    'cart_count' => $cartCount
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Cart updated');
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => false, 'message' => 'Product not found in cart'], 404);
         }
 
         return redirect()->back()->with('error', 'Product not found in cart');
@@ -122,7 +149,24 @@ class CartController extends Controller
             unset($cart[$productId]);
             session(['cart' => $cart]);
 
+            if (request()->wantsJson() || request()->ajax()) {
+                $total = $this->calculateTotal($cart);
+                $cartCount = array_sum(array_column($cart, 'quantity'));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product removed from cart',
+                    'total' => number_format($total, 0, ',', '.'),
+                    'cart_count' => $cartCount,
+                    'is_empty' => empty($cart)
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Product removed from cart');
+        }
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json(['success' => false, 'message' => 'Product not found in cart'], 404);
         }
 
         return redirect()->back()->with('error', 'Product not found in cart');
