@@ -26,25 +26,35 @@ window.toggleWishlist = function(productId, buttonElement) {
     .then(data => {
         if (data && data.success) {
             showToast(data.message, 'success');
-            
+
             // Toggle visual state without reload
             if (buttonElement) {
                 const svg = buttonElement.querySelector('svg');
                 if (svg) {
-                    if (data.message.includes('added')) {
+                    if (data.in_wishlist) {
                         svg.classList.remove('text-gray-600');
                         svg.classList.add('fill-red-500', 'text-red-500');
                     } else {
                         svg.classList.remove('fill-red-500', 'text-red-500');
                         svg.classList.add('text-gray-600');
+                        
+                        // If we are on the wishlist page, remove the card
+                        if (window.location.pathname.includes('/wishlist')) {
+                            const card = buttonElement.closest('.group'); // Assuming card has .group class
+                            if (card) {
+                                card.remove();
+                                // Optional: check if grid is empty and show empty state
+                                const grid = document.querySelector('.grid');
+                                // Check if grid is empty (taking into account text/comment nodes)
+                                if (grid && grid.querySelectorAll('.group').length === 0) {
+                                    location.reload(); 
+                                }
+                            }
+                        }
                     }
                 }
             } else {
-                // Fallback if element not passed (e.g. from product detail page)
-                // Try to find button by parsing logic or just reload for safety if strictly needed, 
-                // but usually product detail page reload is fine or we can target by ID if needed.
-                // For now, let's just reload if no element passed to be safe, AS LONG AS it's not the shop page.
-                // Actually, let's try to avoid reload globally if possible.
+                // Should not happen if passed correctly, but fallback
                  setTimeout(() => location.reload(), 800);
             }
         }
