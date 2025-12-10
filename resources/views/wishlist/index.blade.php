@@ -87,7 +87,13 @@
 
 @push('scripts')
 <script>
-    function addToCart(productId) {
+    async function addToCart(productId) {
+        // Show custom confirmation modal
+        const confirmed = await showConfirmModal('Add this product to your cart?', 'Add to Cart');
+        if (!confirmed) {
+            return; // User cancelled
+        }
+        
         // Optimistic UI Update
         const desktopCountEl = document.getElementById('cartCountDesktop');
         const mobileCountEl = document.getElementById('cartCountMobile');
@@ -153,9 +159,6 @@
                     if (desktopCountEl) desktopCountEl.textContent = data.cart_count;
                     if (mobileCountEl) mobileCountEl.textContent = data.cart_count;
                 }
-                
-                // Show custom notification
-                showCartNotification(1, data.cart_count);
 
             } else {
                 // Revert on failure

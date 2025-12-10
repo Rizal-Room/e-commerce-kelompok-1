@@ -22,9 +22,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Cart Items -->
             <div class="lg:col-span-2 space-y-4">
+                <!-- Select All -->
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer">
+                    <label for="selectAll" class="font-bold text-gray-900 cursor-pointer">Select All</label>
+                    <span class="text-sm text-gray-600 ml-auto">(<span id="selected-count">0</span> selected)</span>
+                </div>
+
                 @foreach($cart as $productId => $item)
                     <div class="card p-6" id="cart-item-{{ $productId }}">
                         <div class="flex gap-6">
+                            <!-- Checkbox -->
+                            <div class="flex-shrink-0 pt-1">
+                                <input type="checkbox" 
+                                       class="product-checkbox w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer" 
+                                       data-product-id="{{ $productId }}"
+                                       data-price="{{ $item['price'] }}"
+                                       data-quantity="{{ $item['quantity'] }}"
+                                       onchange="updateSelection()">
+                            </div>
+
                             <!-- Product Image -->
                             <a href="{{ route('products.show', $item['slug']) }}" class="flex-shrink-0">
                                 <div class="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
@@ -115,18 +132,23 @@
                             <span class="font-medium" id="summary-subtotal">Rp {{ number_format($total, 0, ',', '.') }}</span>
                         </div>
                         
+                        <div class="flex justify-between text-sm text-primary-600">
+                            <span>Selected (<span id="selected-items-count">0</span> items)</span>
+                            <span class="font-semibold" id="selected-total">Rp 0</span>
+                        </div>
+                        
                         <div class="border-t border-gray-200 pt-4">
                             <div class="flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span class="text-primary-900" id="summary-total">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                                <span>Total to Pay</span>
+                                <span class="text-primary-900" id="summary-total">Rp 0</span>
                             </div>
                         </div>
                     </div>
 
                     @auth
-                        <a href="{{ route('checkout.index') }}" class="block w-full btn-primary text-center mb-3">
-                            Proceed to Checkout
-                        </a>
+                        <button onclick="proceedToCheckout()" id="checkoutBtn" disabled class="block w-full btn-primary text-center mb-3 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                            Proceed to Checkout (<span id="checkout-count">0</span>)
+                        </button>
                     @else
                         <a href="{{ route('login') }}" class="block w-full btn-primary text-center mb-3">
                             Login to Checkout
@@ -141,6 +163,70 @@
         </div>
 
 <script>
+// Toggle Select All
+function toggleSelectAll(checkbox) {
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    productCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateSelection();
+}
+
+// Update Selection and Totals
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    let selectedCount = 0;
+    let selectedTotal = 0;
+    let selectedItemsCount = 0;
+    
+    const selectedProducts = [];
+    
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            selectedCount++;
+            const price = parseInt(checkbox.dataset.price);
+            const quantity = parseInt(checkbox.dataset.quantity);
+            selectedTotal += price * quantity;
+            selectedItemsCount += quantity;
+            selectedProducts.push(checkbox.dataset.productId);
+        }
+    });
+    
+    // Update UI
+    document.getElementById('selected-count').textContent = selectedCount;
+    document.getElementById('selected-items-count').textContent = selectedItemsCount;
+    document.getElementById('selected-total').textContent = 'Rp ' + selectedTotal.toLocaleString('id-ID');
+    document.getElementById('summary-total').textContent = 'Rp ' + selectedTotal.toLocaleString('id-ID');
+    document.getElementById('checkout-count').textContent = selectedCount;
+    
+    // Update Select All checkbox state
+    selectAllCheckbox.checked = selectedCount === checkboxes.length && selectedCount > 0;
+    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
+    
+    // Enable/Disable checkout button
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) {
+        checkoutBtn.disabled = selectedCount === 0;
+    }
+    
+    // Store selected products in session storage
+    sessionStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+}
+
+// Proceed to Checkout with Selected Items
+function proceedToCheckout() {
+    const selectedProducts = JSON.parse(sessionStorage.getItem('selectedProducts') || '[]');
+    
+    if (selectedProducts.length === 0) {
+        alert('Please select at least one product to checkout');
+        return;
+    }
+    
+    // Redirect to checkout with selected products
+    const params = new URLSearchParams();
+    selectedProducts.forEach(id => params.append('products[]', id));
+    window.location.href = `/checkout?${params.toString()}`;
+}
+
 function updateCart(productId, newQuantity) {
     if (newQuantity < 0) return; 
 

@@ -339,8 +339,14 @@ function decrementQty() {
 }
 
 // Add to Cart via AJAX
-document.getElementById('addToCartForm')?.addEventListener('submit', function(e) {
+document.getElementById('addToCartForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Show custom confirmation modal
+    const confirmed = await showConfirmModal('Add this product to your cart?', 'Add to Cart');
+    if (!confirmed) {
+        return; // User cancelled
+    }
     
     // Animate button
     const submitBtn = this.querySelector('button[type="submit"]');
@@ -423,9 +429,6 @@ document.getElementById('addToCartForm')?.addEventListener('submit', function(e)
                  if (desktopWrapper) desktopWrapper.classList.remove('hidden');
                  if (mobileCountEl) mobileCountEl.classList.remove('hidden');
             }
-            
-            // Show custom notification
-            showCartNotification(quantity, data.cart_count);
 
         } else {
             // Revert
