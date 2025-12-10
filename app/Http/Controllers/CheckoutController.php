@@ -14,7 +14,7 @@ class CheckoutController extends Controller
     /**
      * Display checkout page
      */
-    public function index()
+    public function index(Request $request)
     {
         $cart = session('cart', []);
         
@@ -22,12 +22,32 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
+        // Get selected products from query parameter
+        $selectedProductIds = $request->input('products', []);
+        
+        // If no products selected, redirect back to cart
+        if (empty($selectedProductIds)) {
+            return redirect()->route('cart.index')->with('error', 'Please select at least one product to checkout');
+        }
+        
+        // Filter cart to only include selected products
+        $filteredCart = array_filter($cart, function($item, $productId) use ($selectedProductIds) {
+            return in_array($productId, $selectedProductIds);
+        }, ARRAY_FILTER_USE_BOTH);
+        
+        if (empty($filteredCart)) {
+            return redirect()->route('cart.index')->with('error', 'Selected products not found in cart');
+        }
+
         $subtotal = 0;
-        foreach ($cart as $item) {
+        foreach ($filteredCart as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }
 
-        return view('checkout.index', compact('cart', 'subtotal'));
+        // Store selected products in session for checkout processing
+        session(['checkout_products' => $selectedProductIds]);
+
+        return view('checkout.index', compact('filteredCart', 'subtotal'));
     }
 
     /**
@@ -49,6 +69,22 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
+        // Get selected products from session
+        $selectedProductIds = session('checkout_products', []);
+        
+        if (empty($selectedProductIds)) {
+            return redirect()->route('cart.index')->with('error', 'No products selected for checkout');
+        }
+        
+        // Filter cart to only include selected products
+        $checkoutCart = array_filter($cart, function($item, $productId) use ($selectedProductIds) {
+            return in_array($productId, $selectedProductIds);
+        }, ARRAY_FILTER_USE_BOTH);
+        
+        if (empty($checkoutCart)) {
+            return redirect()->route('cart.index')->with('error', 'Selected products not found in cart');
+        }
+
         // Get or create buyer profile
         $buyer = Buyer::firstOrCreate(
             ['user_id' => auth()->id()],
@@ -65,7 +101,7 @@ class CheckoutController extends Controller
 
         // Group cart items by store
         $itemsByStore = [];
-        foreach ($cart as $item) {
+        foreach ($checkoutCart as $item) {
             $storeId = $item['store_id'];
             if (!isset($itemsByStore[$storeId])) {
                 $itemsByStore[$storeId] = [];
@@ -131,8 +167,15 @@ class CheckoutController extends Controller
             $createdTransactions[] = $transaction;
         }
 
-        // Clear cart
-        session()->forget('cart');
+        // Remove only selected products from cart
+        $cart = session('cart', []);
+        foreach ($selectedProductIds as $productId) {
+            unset($cart[$productId]);
+        }
+        session(['cart' => $cart]);
+        
+        // Clear checkout session
+        session()->forget('checkout_products');
 
         // Redirect to success page with first transaction
         return redirect()->route('checkout.success', $createdTransactions[0]->id)

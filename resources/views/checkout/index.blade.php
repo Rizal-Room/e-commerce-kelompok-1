@@ -245,7 +245,7 @@
                     
                     <!-- Cart Items -->
                     <div class="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                        @foreach($cart as $item)
+                        @foreach($filteredCart as $item)
                             <div class="flex gap-3">
                                 <div class="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                                     @if($item['image'])
