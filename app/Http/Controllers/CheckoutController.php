@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 class CheckoutController extends Controller
 {
     /**
-     * Display checkout page
+     * Tampilkan halaman checkout
      */
     public function index(Request $request)
     {
@@ -22,15 +22,15 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        // Get selected products from query parameter
+        // Ambil produk yang dipilih dari parameter query
         $selectedProductIds = $request->input('products', []);
         
-        // If no products selected, redirect back to cart
+        // Jika tidak ada produk yang dipilih, redirect kembali ke cart
         if (empty($selectedProductIds)) {
             return redirect()->route('cart.index')->with('error', 'Please select at least one product to checkout');
         }
         
-        // Filter cart to only include selected products
+        // Filter cart hanya untuk produk yang dipilih
         $filteredCart = array_filter($cart, function($item, $productId) use ($selectedProductIds) {
             return in_array($productId, $selectedProductIds);
         }, ARRAY_FILTER_USE_BOTH);
@@ -44,14 +44,14 @@ class CheckoutController extends Controller
             $subtotal += $item['price'] * $item['quantity'];
         }
 
-        // Store selected products in session for checkout processing
+        // Simpan produk yang dipilih di session untuk proses checkout
         session(['checkout_products' => $selectedProductIds]);
 
         return view('checkout.index', compact('filteredCart', 'subtotal'));
     }
 
     /**
-     * Process checkout
+     * Proses checkout
      */
     public function store(Request $request)
     {
@@ -69,14 +69,14 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty');
         }
 
-        // Get selected products from session
+        // Ambil produk yang dipilih dari session
         $selectedProductIds = session('checkout_products', []);
         
         if (empty($selectedProductIds)) {
             return redirect()->route('cart.index')->with('error', 'No products selected for checkout');
         }
         
-        // Filter cart to only include selected products
+        // Filter cart hanya untuk produk yang dipilih
         $checkoutCart = array_filter($cart, function($item, $productId) use ($selectedProductIds) {
             return in_array($productId, $selectedProductIds);
         }, ARRAY_FILTER_USE_BOTH);
@@ -85,13 +85,13 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Selected products not found in cart');
         }
 
-        // Get or create buyer profile
+        // Ambil atau buat profil buyer
         $buyer = Buyer::firstOrCreate(
             ['user_id' => auth()->id()],
             ['profile_picture' => null, 'phone_number' => null]
         );
 
-        // Calculate shipping cost based on type
+        // Hitung biaya pengiriman berdasarkan tipe
         $shippingCosts = [
             'regular' => 10000,
             'express' => 25000,
@@ -99,7 +99,7 @@ class CheckoutController extends Controller
         ];
         $shippingCost = $shippingCosts[$request->shipping_type];
 
-        // Group cart items by store
+        // Kelompokkan item cart berdasarkan toko
         $itemsByStore = [];
         foreach ($checkoutCart as $item) {
             $storeId = $item['store_id'];
@@ -112,33 +112,33 @@ class CheckoutController extends Controller
 
         $createdTransactions = [];
 
-        // Determine payment status based on payment method
-        // E-Wallet and Credit Card are instant payments, so mark as 'paid'
-        // COD and Bank Transfer require manual confirmation, so keep as 'unpaid'
+        // Tentukan status pembayaran berdasarkan metode pembayaran
+        // E-Wallet dan Credit Card adalah pembayaran instan, tandai sebagai 'paid'
+        // COD dan Bank Transfer butuh konfirmasi manual, tetap sebagai 'unpaid'
         $paymentStatus = in_array($request->payment_method, ['e_wallet', 'credit_card']) 
             ? 'paid' 
             : 'unpaid';
 
-        // Create transaction for each store
+        // Buat transaksi untuk setiap toko
         foreach ($itemsByStore as $storeId => $items) {
             $subtotal = 0;
             foreach ($items as $item) {
                 $subtotal += $item['price'] * $item['quantity'];
             }
 
-            $tax = $subtotal * 0.11; // 11% tax
+            $tax = $subtotal * 0.11; // Pajak 11%
             $grandTotal = $subtotal + $shippingCost + $tax;
 
-            // Create transaction
+            // Buat transaksi
             $transaction = Transaction::create([
                 'code' => 'TRX-' . strtoupper(Str::random(10)),
                 'buyer_id' => $buyer->id,
                 'store_id' => $storeId,
-                'address_id' => 1, // Placeholder address ID
+                'address_id' => 1, // ID alamat placeholder
                 'address' => $request->address,
                 'city' => $request->city,
                 'postal_code' => $request->postal_code,
-                'shipping' => 'JNE', // Placeholder shipping courier
+                'shipping' => 'JNE', // Kurir pengiriman placeholder
                 'shipping_type' => $request->shipping_type,
                 'shipping_cost' => $shippingCost,
                 'tracking_number' => null,
@@ -148,7 +148,7 @@ class CheckoutController extends Controller
                 'payment_method' => $request->payment_method,
             ]);
 
-            // Create transaction details
+            // Buat detail transaksi
             foreach ($items as $item) {
                 TransactionDetail::create([
                     'transaction_id' => $transaction->id,
@@ -157,7 +157,7 @@ class CheckoutController extends Controller
                     'subtotal' => $item['price'] * $item['quantity'],
                 ]);
 
-                // Reduce product stock
+                // Kurangi stok produk
                 $product = Product::find($item['product_id']);
                 if ($product) {
                     $product->decrement('stock', $item['quantity']);
@@ -167,27 +167,27 @@ class CheckoutController extends Controller
             $createdTransactions[] = $transaction;
         }
 
-        // Remove only selected products from cart
+        // Hapus hanya produk yang dipilih dari cart
         $cart = session('cart', []);
         foreach ($selectedProductIds as $productId) {
             unset($cart[$productId]);
         }
         session(['cart' => $cart]);
         
-        // Clear checkout session
+        // Bersihkan session checkout
         session()->forget('checkout_products');
 
-        // Redirect to success page with first transaction
+        // Redirect ke halaman sukses dengan transaksi pertama
         return redirect()->route('checkout.success', $createdTransactions[0]->id)
             ->with('success', 'Order placed successfully!');
     }
 
     /**
-     * Display success page
+     * Tampilkan halaman sukses
      */
     public function success(Transaction $transaction)
     {
-        // Ensure user owns this transaction
+        // Pastikan user memiliki transaksi ini
         if ($transaction->buyer->user_id !== auth()->id()) {
             abort(403);
         }
