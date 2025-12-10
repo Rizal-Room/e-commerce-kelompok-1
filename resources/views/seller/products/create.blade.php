@@ -76,7 +76,7 @@
                         class="input-field @error('condition') border-danger-500 @enderror"
                         required>
                         <option value="new" {{ old('condition') == 'new' ? 'selected' : '' }}>New</option>
-                        <option value="used" {{ old('condition') == 'used' ? 'selected' : '' }}>Used</option>
+                        <option value="second" {{ old('condition') == 'second' ? 'selected' : '' }}>Second</option>
                     </select>
                     @error('condition')
                         <p class="text-danger-500 text-sm mt-1">{{ $message }}</p>

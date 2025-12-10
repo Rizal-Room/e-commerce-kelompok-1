@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             ProductCategorySeeder::class,
             WomensTopsSeeder::class,
+            BershkaProductSeeder::class,
         ]);
     }
 }

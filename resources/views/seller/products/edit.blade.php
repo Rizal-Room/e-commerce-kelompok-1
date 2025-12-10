@@ -17,7 +17,7 @@
 
     {{-- Form --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <form method="POST" action="{{ route('seller.products.update', $product->id) }}" enctype="multipart/form-data">
+        <form id="updateProductForm" method="POST" action="{{ route('seller.products.update', $product->id) }}" enctype="multipart/form-data" novalidate>
             @csrf
             @method('PUT')
 
@@ -75,7 +75,7 @@
                         class="input-field @error('condition') border-danger-500 @enderror"
                         required>
                         <option value="new" {{ $product->condition == 'new' ? 'selected' : '' }}>New</option>
-                        <option value="used" {{ $product->condition == 'used' ? 'selected' : '' }}>Used</option>
+                        <option value="second" {{ $product->condition == 'second' ? 'selected' : '' }}>Second</option>
                     </select>
                     @error('condition')
                         <p class="text-danger-500 text-sm mt-1">{{ $message }}</p>
@@ -201,34 +201,125 @@
 
             {{-- Submit Buttons --}}
             <div class="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200">
-                <button type="submit" class="btn-primary">
-                    Update Product
+                <button 
+                    type="button" 
+                    id="updateButton"
+                    class="btn-primary"
+                    onclick="updateProduct()"
+                >
+                    <span id="buttonText">Update Product</span>
+                    <span id="buttonLoading" style="display: none;">Updating...</span>
                 </button>
                 <a href="{{ route('seller.products.index') }}" class="btn-outline">
                     Cancel
                 </a>
             </div>
+            
+            {{-- Success/Error Messages --}}
+            <div id="updateMessage" style="display: none; margin-top: 1rem;"></div>
         </form>
     </div>
 </div>
 
 @push('scripts')
 <script>
+console.log('Edit product script loaded!');
+
+// AJAX Update Function
+function updateProduct() {
+    console.log('updateProduct function called!');
+    const button = document.getElementById('updateButton');
+    const buttonText = document.getElementById('buttonText');
+    const buttonLoading = document.getElementById('buttonLoading');
+    const messageDiv = document.getElementById('updateMessage');
+    const form = document.getElementById('updateProductForm');
+    
+    console.log('Form:', form);
+    console.log('Button:', button);
+    
+    // Disable button and show loading
+    button.disabled = true;
+    buttonText.style.display = 'none';
+    buttonLoading.style.display = 'inline';
+    
+    // Create FormData from form
+    const formData = new FormData(form);
+    
+    // Send AJAX request
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Success
+        messageDiv.className = 'bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded-lg';
+        messageDiv.innerHTML = '✓ Product updated successfully! Redirecting...';
+        messageDiv.style.display = 'block';
+        
+        // Redirect after 1 second
+        setTimeout(() => {
+            window.location.href = '{{ route("seller.products.index") }}';
+        }, 1000);
+    })
+    .catch(error => {
+        // Error
+        console.error('Update error:', error);
+        button.disabled = false;
+        buttonText.style.display = 'inline';
+        buttonLoading.style.display = 'none';
+        
+        let errorMessage = 'Failed to update product. ';
+        if (error.errors) {
+            errorMessage += Object.values(error.errors).flat().join(', ');
+        } else if (error.message) {
+            errorMessage += error.message;
+        } else {
+            errorMessage += 'Please try again.';
+        }
+        
+        messageDiv.className = 'bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded-lg';
+        messageDiv.innerHTML = '✗ ' + errorMessage;
+        messageDiv.style.display = 'block';
+    });
+}
+
 function previewImages(event) {
     const preview = document.getElementById('image-preview');
     preview.innerHTML = '';
     
     const files = event.target.files;
+    
+    // Show upload notification
+    if (files.length > 0) {
+        const notification = document.createElement('div');
+        notification.className = 'col-span-full bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded-lg mb-2 flex items-center gap-2';
+        notification.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="font-medium">${files.length} image${files.length > 1 ? 's' : ''} selected and ready to upload</span>
+        `;
+        preview.appendChild(notification);
+    }
+    
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const reader = new FileReader();
         
         reader.onload = function(e) {
             const div = document.createElement('div');
-            div.className = 'relative aspect-square rounded-lg overflow-hidden border border-gray-200';
+            div.className = 'relative aspect-square rounded-lg overflow-hidden border-2 border-success-500';
             div.innerHTML = `
                 <img src="${e.target.result}" class="w-full h-full object-cover" alt="Preview">
-                <div class="absolute top-1 right-1 bg-success-500 text-white rounded-full px-2 py-1 text-xs font-bold">
+                <div class="absolute top-1 right-1 bg-success-500 text-white rounded-full px-2 py-1 text-xs font-bold shadow-lg">
                     NEW
                 </div>
             `;

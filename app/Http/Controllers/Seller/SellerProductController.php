@@ -49,7 +49,7 @@ class SellerProductController extends Controller
             'stock' => 'required|integer|min:0',
             'weight' => 'required|integer|min:1',
             'product_category_id' => 'required|exists:product_categories,id',
-            'condition' => 'required|in:new,used',
+            'condition' => 'required|in:new,second',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
@@ -101,45 +101,113 @@ class SellerProductController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $product = auth()->user()->store->products()->findOrFail($id);
+        try {
+            // Find product first (like edit() method does)
+            $product = Product::findOrFail($id);
+            
+            // Verify ownership
+            if ($product->store_id !== auth()->user()->store->id) {
+                throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+            }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'product_category_id' => 'required|exists:product_categories,id',
-            'condition' => 'required|in:new,used',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'weight' => 'required|integer|min:1',
+                'product_category_id' => 'required|exists:product_categories,id',
+                'condition' => 'required|in:new,second',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
 
-        // Update product
-        $product->update([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . Str::random(6),
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-            'stock' => $validated['stock'],
-            'weight' => $validated['weight'],
-            'product_category_id' => $validated['product_category_id'],
-            'condition' => $validated['condition'],
-        ]);
+            // Prepare update data
+            $updateData = [
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'price' => $validated['price'],
+                'stock' => $validated['stock'],
+                'weight' => $validated['weight'],
+                'product_category_id' => $validated['product_category_id'],
+                'condition' => $validated['condition'],
+            ];
 
-        // Handle new image uploads
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'image' => $path,
-                    'is_thumbnail' => $product->productImages->count() === 0,
+            // Only update slug if name has changed
+            if ($product->name !== $validated['name']) {
+                $updateData['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
+            }
+
+            // Update product
+            $product->update($updateData);
+
+            // Handle new image uploads
+            $uploadedCount = 0;
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('products', 'public');
+                    
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image' => $path,
+                        'is_thumbnail' => $product->productImages->count() === 0,
+                    ]);
+                    $uploadedCount++;
+                }
+            }
+
+            $message = 'Product updated successfully!';
+            if ($uploadedCount > 0) {
+                $message .= " ($uploadedCount " . Str::plural('image', $uploadedCount) . " uploaded)";
+            }
+
+            // Return JSON for AJAX requests
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'redirect' => route('seller.products.index')
                 ]);
             }
-        }
 
-        return redirect()->route('seller.products.index')
-            ->with('success', 'Product updated successfully!');
+            return redirect()->route('seller.products.index')
+                ->with('success', $message);
+                
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // Product not found or doesn't belong to this seller
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found or you do not have permission to edit it.'
+                ], 404);
+            }
+            abort(404, 'Product not found');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Return validation errors as JSON for AJAX
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        } catch (\Exception $e) {
+            // Return general errors as JSON for AJAX
+            \Log::error('Product update failed', [
+                'product_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update product: ' . $e->getMessage()
+                ], 500);
+            }
+            throw $e;
+        }
     }
 
     /**

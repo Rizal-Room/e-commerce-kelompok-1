@@ -15,6 +15,16 @@
         </a>
     </div>
 
+    {{-- Success Notification --}}
+    @if(session('success'))
+    <div class="bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded-lg flex items-center gap-3">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
+    @endif
+
     {{-- Products Table --}}
     @if($products->count() > 0)
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
