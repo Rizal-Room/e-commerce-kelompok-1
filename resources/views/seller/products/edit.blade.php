@@ -17,7 +17,7 @@
 
     {{-- Form --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <form id="updateProductForm" method="POST" action="{{ route('seller.products.update', $product->id) }}" enctype="multipart/form-data" novalidate>
+        <form id="updateProductForm" method="POST" action="{{ route('seller.products.update', $product->id) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -202,96 +202,35 @@
             {{-- Submit Buttons --}}
             <div class="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200">
                 <button 
-                    type="button" 
-                    id="updateButton"
-                    class="btn-primary"
-                    onclick="updateProduct()"
+                    type="submit" 
+                    style="
+                        background-color: #03A685;
+                        color: white;
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 0.375rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        border: none;
+                        position: relative;
+                        z-index: 10;
+                    "
+                    onmouseover="this.style.backgroundColor='#028a6f'"
+                    onmouseout="this.style.backgroundColor='#03A685'"
                 >
-                    <span id="buttonText">Update Product</span>
-                    <span id="buttonLoading" style="display: none;">Updating...</span>
+                    Update Product
                 </button>
                 <a href="{{ route('seller.products.index') }}" class="btn-outline">
                     Cancel
                 </a>
             </div>
-            
-            {{-- Success/Error Messages --}}
-            <div id="updateMessage" style="display: none; margin-top: 1rem;"></div>
         </form>
     </div>
 </div>
 
 @push('scripts')
 <script>
-console.log('Edit product script loaded!');
+// Only keep image preview function, remove all form submission related JS
 
-// AJAX Update Function
-function updateProduct() {
-    console.log('updateProduct function called!');
-    const button = document.getElementById('updateButton');
-    const buttonText = document.getElementById('buttonText');
-    const buttonLoading = document.getElementById('buttonLoading');
-    const messageDiv = document.getElementById('updateMessage');
-    const form = document.getElementById('updateProductForm');
-    
-    console.log('Form:', form);
-    console.log('Button:', button);
-    
-    // Disable button and show loading
-    button.disabled = true;
-    buttonText.style.display = 'none';
-    buttonLoading.style.display = 'inline';
-    
-    // Create FormData from form
-    const formData = new FormData(form);
-    
-    // Send AJAX request
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Success
-        messageDiv.className = 'bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded-lg';
-        messageDiv.innerHTML = '✓ Product updated successfully! Redirecting...';
-        messageDiv.style.display = 'block';
-        
-        // Redirect after 1 second
-        setTimeout(() => {
-            window.location.href = '{{ route("seller.products.index") }}';
-        }, 1000);
-    })
-    .catch(error => {
-        // Error
-        console.error('Update error:', error);
-        button.disabled = false;
-        buttonText.style.display = 'inline';
-        buttonLoading.style.display = 'none';
-        
-        let errorMessage = 'Failed to update product. ';
-        if (error.errors) {
-            errorMessage += Object.values(error.errors).flat().join(', ');
-        } else if (error.message) {
-            errorMessage += error.message;
-        } else {
-            errorMessage += 'Please try again.';
-        }
-        
-        messageDiv.className = 'bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded-lg';
-        messageDiv.innerHTML = '✗ ' + errorMessage;
-        messageDiv.style.display = 'block';
-    });
-}
 
 function previewImages(event) {
     const preview = document.getElementById('image-preview');
@@ -304,7 +243,9 @@ function previewImages(event) {
         const notification = document.createElement('div');
         notification.className = 'col-span-full bg-success-50 border border-success-200 text-success-700 px-4 py-3 rounded-lg mb-2 flex items-center gap-2';
         notification.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
             <span class="font-medium">${files.length} image${files.length > 1 ? 's' : ''} selected and ready to upload</span>
         `;
         preview.appendChild(notification);

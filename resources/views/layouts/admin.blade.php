@@ -13,7 +13,7 @@
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-4">
                     <a href="{{ route('admin.dashboard') }}" class="text-xl font-extrabold text-white">
-                        Admin Panel
+                        🛡️ Admin Panel
                     </a>
                 </div>
                 
@@ -55,14 +55,14 @@
         {{-- Main Content --}}
         <main class="flex-1 p-8">
             @if(session('success'))
-                <div class="bg-gray-100 border-2 border-gray-800 text-gray-900 px-4 py-3 rounded-md mb-6 font-bold">
-                    ✓ {{ session('success') }}
+                <div class="bg-success-50 border border-success-500 text-success-700 px-4 py-3 rounded-md mb-6">
+                    {{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="bg-gray-200 border-2 border-gray-900 text-gray-900 px-4 py-3 rounded-md mb-6 font-bold">
-                    ✗ {{ session('error') }}
+                <div class="bg-danger-50 border border-danger-500 text-danger-700 px-4 py-3 rounded-md mb-6">
+                    {{ session('error') }}
                 </div>
             @endif
 

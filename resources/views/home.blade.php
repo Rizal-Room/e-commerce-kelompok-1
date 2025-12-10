@@ -34,8 +34,8 @@
 <section class="bg-gray-50 py-20">
     <div class="container-custom">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-extrabold mb-3" style="color: #252B42;">EDITOR'S PICK</h2>
-            <p class="text-gray-600 text-lg">Problems trying to resolve the conflict between</p>
+            <h2 class="text-3xl font-extrabold mb-3" style="color: #252B42;">Curated Collections</h2>
+            <p class="text-gray-600 text-lg">Discover our handpicked selections for every style</p>
         </div>
         
         {{-- Centered 2 Column Grid --}}
@@ -97,8 +97,8 @@
 {{-- Featured Products --}}
 <section class="bg-gray-50 py-16">
     <div class="container-custom">
-        <h2 class="text-2xl font-bold text-center mb-2" style="color: #252B42;">BESTSELLER PRODUCTS</h2>
-        <p class="text-center text-gray-600 mb-8">Problems trying to resolve the conflict between</p>
+        <h2 class="text-2xl font-bold text-center mb-2" style="color: #252B42;">Popular This Week</h2>
+        <p class="text-center text-gray-600 mb-8">Trending products loved by our customers</p>
         
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             @forelse($featuredProducts as $product)

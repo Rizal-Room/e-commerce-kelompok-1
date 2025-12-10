@@ -28,12 +28,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                         </svg>
                     </button>
-                    <!-- Share Button (Visual only) -->
-                    <button class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform">
-                         <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                        </svg>
-                    </button>
                 </div>
 
                 @if($product->productImages->count() > 0)
@@ -104,13 +98,9 @@
             {{-- Description --}}
             <div class="mb-8 border-b border-gray-200 pb-8">
                 <h3 class="font-bold text-gray-900 mb-2">Description</h3>
-                <div class="prose prose-sm text-gray-600 line-clamp-3" id="productDescription">
+                <div class="prose prose-sm text-gray-600">
                     {{ $product->description }}
                 </div>
-                <button onclick="document.getElementById('productDescription').classList.toggle('line-clamp-3'); this.innerText = this.innerText === 'Read More' ? 'Show Less' : 'Read More'" 
-                        class="text-sm font-bold text-gray-900 mt-2 underline decoration-1 underline-offset-4 hover:decoration-2">
-                    Read More
-                </button>
             </div>
 
             {{-- Product Form (Color, Size, Add to Cart) --}}
@@ -122,10 +112,7 @@
 
                 <!-- Mock Size Selector -->
                 <div>
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-gray-900">Size: <span class="text-gray-500 font-normal">M</span></h3>
-                        <a href="#" class="text-sm underline text-gray-500 hover:text-black">View Size Chart</a>
-                    </div>
+                    <h3 class="font-bold text-gray-900 mb-3">Size: <span class="text-gray-500 font-normal">M</span></h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach(['S', 'M', 'L', 'XL', '2XL'] as $size)
                             <button type="button" 
@@ -172,17 +159,15 @@
                 </div>
             </form>
 
-            {{-- Accordion Sections (Mock) --}}
+            {{-- Reviews Accordion --}}
             <div class="mt-12 border-t border-gray-200">
-                @foreach(['Product Description', 'Product Specification', 'Reviews'] as $section)
-                    <div class="border-b border-gray-200">
-                        <button class="w-full py-4 flex justify-between items-center text-left" onclick="this.nextElementSibling.classList.toggle('hidden');">
-                            <span class="font-bold text-gray-900">{{ $section }}</span>
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div class="hidden pb-4 text-sm text-gray-600">
-                            @if($section == 'Reviews')
-                                {{-- Reviews Section --}}
+                <div class="border-b border-gray-200">
+                    <button class="w-full py-4 flex justify-between items-center text-left" onclick="this.nextElementSibling.classList.toggle('hidden');">
+                        <span class="font-bold text-gray-900">Reviews</span>
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="hidden pb-4 text-sm text-gray-600">
+                        {{-- Reviews Section --}}
     <div class="mt-16 border-t border-gray-200 pt-16">
         <h2 class="text-2xl font-bold text-gray-900 mb-8 font-serif">Product Reviews</h2>
 
@@ -254,16 +239,16 @@
                 <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <p class="font-bold text-gray-900">Review List</p>
                     <div class="flex gap-4 text-sm">
-                        <button class="font-bold text-black border-b-2 border-black pb-4 -mb-4.5">Most Recent</button>
-                        <button class="text-gray-500 hover:text-black">Highest Rating</button>
-                        <button class="text-gray-500 hover:text-black">Lowest Rating</button>
+                        <button onclick="sortReviews('recent')" id="sortRecent" class="font-bold text-black border-b-2 border-black pb-4 -mb-4.5">Most Recent</button>
+                        <button onclick="sortReviews('highest')" id="sortHighest" class="text-gray-500 hover:text-black">Highest Rating</button>
+                        <button onclick="sortReviews('lowest')" id="sortLowest" class="text-gray-500 hover:text-black">Lowest Rating</button>
                     </div>
                 </div>
 
                 @if($product->productReviews->count() > 0)
-                    <div class="space-y-8">
+                    <div class="space-y-8" id="reviewList">
                         @foreach($product->productReviews as $review)
-                            <div class="review-item border-b border-gray-100 pb-8 last:border-0" data-rating="{{ $review->rating }}">
+                            <div class="review-item border-b border-gray-100 pb-8 last:border-0" data-rating="{{ $review->rating }}" data-date="{{ $review->created_at->timestamp }}">
                                 <div class="flex items-start justify-between mb-4">
                                     <div class="flex text-yellow-400 text-sm">
                                         @for($i = 1; $i <= 5; $i++)
@@ -314,12 +299,8 @@
             </div>
         </div>
     </div>
-                            @else
-                                <p>Content for {{ $section }} goes here.</p>
-                            @endif
-                        </div>
                     </div>
-                @endforeach
+                </div>
             </div>
 
         </div>
@@ -442,6 +423,10 @@ document.getElementById('addToCartForm')?.addEventListener('submit', function(e)
                  if (desktopWrapper) desktopWrapper.classList.remove('hidden');
                  if (mobileCountEl) mobileCountEl.classList.remove('hidden');
             }
+            
+            // Show custom notification
+            showCartNotification(quantity, data.cart_count);
+
         } else {
             // Revert
             if (desktopCountEl) desktopCountEl.textContent = previousCount;
@@ -483,6 +468,40 @@ document.getElementById('addToCartForm')?.addEventListener('submit', function(e)
         submitBtn.disabled = false;
     });
 });
+
+// Review Sorting Function
+function sortReviews(sortType) {
+    const reviewList = document.getElementById('reviewList');
+    const reviews = Array.from(document.querySelectorAll('.review-item'));
+    
+    // Update active button state
+    document.getElementById('sortRecent').classList.remove('font-bold', 'text-black', 'border-b-2', 'border-black');
+    document.getElementById('sortRecent').classList.add('text-gray-500', 'hover:text-black');
+    document.getElementById('sortHighest').classList.remove('font-bold', 'text-black', 'border-b-2', 'border-black');
+    document.getElementById('sortHighest').classList.add('text-gray-500', 'hover:text-black');
+    document.getElementById('sortLowest').classList.remove('font-bold', 'text-black', 'border-b-2', 'border-black');
+    document.getElementById('sortLowest').classList.add('text-gray-500', 'hover:text-black');
+    
+    // Set active button
+    const activeButton = sortType === 'recent' ? 'sortRecent' : (sortType === 'highest' ? 'sortHighest' : 'sortLowest');
+    document.getElementById(activeButton).classList.remove('text-gray-500', 'hover:text-black');
+    document.getElementById(activeButton).classList.add('font-bold', 'text-black', 'border-b-2', 'border-black');
+    
+    // Sort reviews
+    reviews.sort((a, b) => {
+        if (sortType === 'recent') {
+            return parseInt(b.dataset.date) - parseInt(a.dataset.date); // Newest first
+        } else if (sortType === 'highest') {
+            return parseInt(b.dataset.rating) - parseInt(a.dataset.rating); // Highest first
+        } else { // lowest
+            return parseInt(a.dataset.rating) - parseInt(b.dataset.rating); // Lowest first
+        }
+    });
+    
+    // Reorder DOM
+    reviews.forEach(review => reviewList.appendChild(review));
+}
+
 // Review Filtering
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.review-filter-checkbox');

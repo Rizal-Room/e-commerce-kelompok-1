@@ -153,6 +153,10 @@
                     if (desktopCountEl) desktopCountEl.textContent = data.cart_count;
                     if (mobileCountEl) mobileCountEl.textContent = data.cart_count;
                 }
+                
+                // Show custom notification
+                showCartNotification(1, data.cart_count);
+
             } else {
                 // Revert on failure
                 if (desktopCountEl) desktopCountEl.textContent = previousCount;
